@@ -1,0 +1,669 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="PredictSure – Free daily football predictions, sure tips, accumulators and betting results. The most accurate free football tips online.">
+<meta name="keywords" content="free football predictions, sure tips today, accumulator tips, correct score, betting tips, football tips">
+<meta property="og:title" content="PredictSure – Sure Football Predictions Today">
+<meta property="og:description" content="Free daily tips, accas, and results. Join 12,000+ bettors who trust PredictSure.">
+<title>PredictSure — Sure Football Predictions Today</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;500;600;700&family=Barlow+Condensed:wght@600;700&display=swap" rel="stylesheet">
+
+<!-- ═══════════════════════════════════════
+     SUPABASE CONFIG — replace these two values
+     after you create your Supabase project
+     ═══════════════════════════════════════ -->
+<script>
+  const SUPABASE_URL = 'YOUR_SUPABASE_URL';       // e.g. https://xyzxyz.supabase.co
+  const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY'; // long key from Supabase → Settings → API
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<style>
+:root {
+  --bg:#0d0f14; --card:#161a22; --card2:#1c2130;
+  --border:#252c3a; --green:#00e676; --gold:#ffc107;
+  --red:#ff4757; --text:#e8eaf0; --muted:#7a8299;
+  --lock:#2a3045; --tg:#229ed9;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);font-family:'Barlow',sans-serif;color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+/* ── HEADER ── */
+header{background:#0a0c10;border-bottom:1px solid var(--border);padding:0 16px;position:sticky;top:0;z-index:100;}
+.header-top{display:flex;align-items:center;justify-content:space-between;padding:11px 0 6px;}
+.logo-wrap{cursor:pointer;user-select:none;}
+.logo{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:2px;color:var(--text);}
+.logo span{color:var(--green);}
+.logo-tag{font-size:10px;font-weight:600;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-top:-4px;}
+.live-badge{background:var(--red);color:#fff;font-size:10px;font-weight:700;letter-spacing:1.5px;padding:3px 8px;border-radius:3px;animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.55}}
+
+/* ── TOP NAV ── */
+.top-nav{display:flex;border-top:1px solid var(--border);}
+.tab-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:8px 4px;cursor:pointer;border:none;background:transparent;color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;font-family:'Barlow',sans-serif;}
+.tab-btn.active{color:var(--green);border-bottom-color:var(--green);}
+.tab-btn svg{width:18px;height:18px;stroke-width:1.8;}
+.tab-btn span{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
+
+/* ── PAGES ── */
+.page{display:none;}
+.page.active{display:block;}
+main{padding:16px 14px 40px;max-width:480px;margin:0 auto;animation:fadein .4s ease both;}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ── SHARED ── */
+.sh{display:flex;align-items:center;gap:8px;margin-bottom:12px;}
+.sh-dot{width:6px;height:6px;border-radius:50%;background:var(--green);}
+.sh-title{font-family:'Barlow Condensed',sans-serif;font-size:14px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);}
+.date-strip{font-size:11px;font-weight:600;color:var(--green);letter-spacing:1px;text-transform:uppercase;background:rgba(0,230,118,.07);border:1px solid rgba(0,230,118,.15);border-radius:4px;padding:4px 10px;display:inline-block;margin-bottom:16px;}
+
+/* ── SKELETON LOADER ── */
+.skeleton{background:linear-gradient(90deg,var(--card) 25%,var(--card2) 50%,var(--card) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;border-radius:8px;}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.skel-card{height:72px;margin-bottom:10px;}
+.skel-tip{height:90px;margin-bottom:20px;border-radius:12px;}
+
+/* ── FREE TIP CARD ── */
+.free-tip-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
+.free-tip-label{background:var(--green);color:#000;font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;padding:5px 14px;display:block;}
+.tip-row{padding:13px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);}
+.tip-row:last-child{border-bottom:none;}
+.flag{width:32px;height:32px;border-radius:50%;background:var(--card2);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.tip-info{flex:1;min-width:0;}
+.tip-teams{font-weight:700;font-size:14px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tip-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.tip-pick{background:var(--green);color:#000;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;border-radius:6px;padding:6px 10px;min-width:42px;text-align:center;flex-shrink:0;}
+.tip-odds{font-weight:700;font-size:15px;color:var(--gold);min-width:36px;text-align:right;flex-shrink:0;}
+
+/* ── ACCA ── */
+.acca-section{margin-bottom:20px;}
+.acca-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
+.acca-badge{background:linear-gradient(135deg,#f7971e,#ffd200);color:#000;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;border-radius:20px;}
+.acca-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.acca-top-bar{background:linear-gradient(90deg,#1a2a1a,#0d2a14);border-bottom:1px solid rgba(0,230,118,.15);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;}
+.acca-name{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:15px;letter-spacing:1px;text-transform:uppercase;color:var(--green);}
+.acca-odds-total{font-weight:700;font-size:18px;color:var(--gold);}
+.acca-row{padding:12px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);}
+.acca-num{width:22px;height:22px;border-radius:50%;background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.3);color:var(--green);font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.acca-info{flex:1;min-width:0;}
+.acca-teams{font-weight:600;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.acca-detail{font-size:11px;color:var(--muted);margin-top:1px;}
+.acca-pick{background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.25);color:var(--green);font-size:12px;font-weight:700;padding:4px 8px;border-radius:5px;flex-shrink:0;}
+.locked-game{background:rgba(42,48,69,0.25);}
+.locked-game .acca-teams{color:var(--muted);}
+.locked-game .acca-detail{opacity:.5;}
+.acca-pick-locked{width:36px;height:36px;background:var(--lock);border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+
+/* ── TELEGRAM ── */
+.tg-cta{background:linear-gradient(135deg,#0d1b2a,#0a2540);border:1px solid rgba(34,158,217,.3);border-radius:14px;padding:20px 18px;text-align:center;position:relative;overflow:hidden;margin-bottom:24px;}
+.tg-cta::before{content:'';position:absolute;top:-40px;left:-40px;width:120px;height:120px;background:radial-gradient(circle,rgba(34,158,217,.15),transparent 70%);pointer-events:none;}
+.tg-wrap{width:64px;height:64px;background:var(--tg);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;box-shadow:0 0 30px rgba(34,158,217,.4);animation:tgpulse 2s infinite;}
+@keyframes tgpulse{0%,100%{box-shadow:0 0 20px rgba(34,158,217,.4)}50%{box-shadow:0 0 42px rgba(34,158,217,.7)}}
+.tg-wrap svg{width:34px;height:34px;fill:white;}
+.tg-headline{font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--text);margin-bottom:4px;}
+.tg-sub{font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5;}
+.tg-sub strong{color:var(--gold);}
+.tg-btn{display:block;width:100%;background:var(--tg);color:#fff;font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;text-decoration:none;padding:13px;border-radius:8px;border:none;cursor:pointer;transition:background .2s,transform .1s;position:relative;z-index:1;}
+.tg-btn:active{transform:scale(.98);background:#1a8fbf;}
+.tg-members{font-size:11px;color:var(--muted);margin-top:10px;}
+.tg-members span{color:var(--green);font-weight:700;}
+
+/* ── MINI BOOKMAKER LIST ── */
+.mini-bookie-list{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px;}
+.mini-bookie-row{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--border);transition:background .15s;}
+.mini-bookie-row:last-child{border-bottom:none;}
+.mini-bookie-row:active{background:var(--card2);}
+.mini-rank{width:20px;font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--muted);text-align:center;flex-shrink:0;}
+.mini-logo{width:44px;height:36px;border-radius:7px;font-family:'Bebas Neue',sans-serif;font-size:11px;letter-spacing:.5px;display:flex;align-items:center;justify-content:center;flex-shrink:0;text-align:center;line-height:1.2;}
+.mini-info{flex:1;min-width:0;}
+.mini-name{font-weight:700;font-size:13px;color:var(--text);}
+.mini-bonus{font-size:11px;color:var(--green);margin-top:1px;font-weight:600;}
+.mini-claim{background:var(--green);color:#000;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;text-decoration:none;padding:5px 12px;border-radius:5px;flex-shrink:0;transition:opacity .2s;}
+.mini-claim:active{opacity:.75;}
+
+/* ── RESULTS PAGE ── */
+.results-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:18px;}
+.stat-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 8px;text-align:center;}
+.stat-num{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1px;}
+.stat-num.green{color:var(--green);}.stat-num.red{color:var(--red);}.stat-num.gold{color:var(--gold);}
+.stat-lbl{font-size:10px;font-weight:600;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-top:2px;}
+.results-filter{display:flex;gap:8px;margin-bottom:16px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;}
+.results-filter::-webkit-scrollbar{display:none;}
+.rf-btn{flex-shrink:0;padding:5px 14px;border-radius:20px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;white-space:nowrap;font-family:'Barlow',sans-serif;}
+.rf-btn.active{background:var(--green);color:#000;border-color:var(--green);}
+.results-group{margin-bottom:20px;}
+.rg-date{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:6px 0 8px;border-bottom:1px solid var(--border);margin-bottom:10px;}
+.result-row{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--card);border:1px solid var(--border);border-radius:10px;margin-bottom:8px;}
+.result-flag{font-size:20px;flex-shrink:0;}
+.result-info{flex:1;min-width:0;}
+.result-teams{font-weight:600;font-size:13px;color:var(--text);}
+.result-score{color:var(--gold);font-weight:700;}
+.result-meta{font-size:11px;color:var(--muted);margin-top:2px;}
+.result-badge{font-size:11px;font-weight:700;letter-spacing:.5px;padding:4px 9px;border-radius:5px;flex-shrink:0;}
+.badge-win{background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.3);color:var(--green);}
+.badge-loss{background:rgba(255,71,87,.12);border:1px solid rgba(255,71,87,.3);color:var(--red);}
+.badge-void{background:rgba(122,130,153,.12);border:1px solid rgba(122,130,153,.3);color:var(--muted);}
+
+/* ── BONUSES PAGE ── */
+.country-bar{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:18px;}
+.country-flag-icon{font-size:26px;}
+.country-info{flex:1;}
+.country-name-txt{font-weight:700;font-size:14px;color:var(--text);}
+.country-sub-txt{font-size:11px;color:var(--muted);margin-top:1px;}
+.country-change-btn{font-size:11px;font-weight:600;color:var(--tg);text-decoration:underline;cursor:pointer;flex-shrink:0;background:none;border:none;font-family:'Barlow',sans-serif;}
+.bonus-list{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;}
+.bonus-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;}
+.bonus-card.top-pick{border-color:var(--gold);}
+.bonus-top-tag{background:var(--gold);color:#000;font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;padding:4px 12px;display:block;}
+.bonus-body{padding:14px;}
+.bonus-row1{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.bk-logo{width:52px;height:52px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-family:'Bebas Neue',sans-serif;font-size:12px;letter-spacing:1px;text-align:center;flex-shrink:0;line-height:1.2;}
+.bk-info{flex:1;min-width:0;}
+.bk-name{font-weight:700;font-size:15px;color:var(--text);}
+.bk-rating{display:flex;align-items:center;gap:4px;margin-top:2px;}
+.bk-stars{color:var(--gold);font-size:13px;}
+.bk-score{font-size:12px;color:var(--muted);}
+.bk-rank{width:28px;height:28px;border-radius:50%;background:rgba(255,193,7,.12);border:1px solid rgba(255,193,7,.3);color:var(--gold);font-family:'Bebas Neue',sans-serif;font-size:15px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.bonus-pill{background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.2);border-radius:8px;padding:10px 12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;}
+.bonus-pill-icon{font-size:20px;}
+.bonus-pill-text{flex:1;}
+.bonus-pill-amount{font-weight:700;font-size:15px;color:var(--green);}
+.bonus-pill-desc{font-size:11px;color:var(--muted);margin-top:1px;}
+.bonus-tags{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;}
+.bonus-tag{font-size:10px;font-weight:600;letter-spacing:.5px;padding:3px 8px;border-radius:4px;text-transform:uppercase;}
+.tag-live{background:rgba(255,71,87,.12);color:var(--red);border:1px solid rgba(255,71,87,.25);}
+.tag-cash{background:rgba(34,158,217,.12);color:var(--tg);border:1px solid rgba(34,158,217,.25);}
+.tag-mobile{background:rgba(167,139,250,.12);color:#a78bfa;border:1px solid rgba(167,139,250,.25);}
+.tag-crypto{background:rgba(255,193,7,.12);color:var(--gold);border:1px solid rgba(255,193,7,.25);}
+.tag-fast{background:rgba(0,230,118,.12);color:var(--green);border:1px solid rgba(0,230,118,.25);}
+.claim-btn{display:block;width:100%;background:var(--green);color:#000;font-family:'Barlow Condensed',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;padding:11px;border-radius:8px;text-align:center;transition:opacity .2s;}
+.claim-btn:active{opacity:.8;}
+
+/* ── EMPTY / ERROR STATES ── */
+.empty-state{text-align:center;padding:40px 20px;color:var(--muted);}
+.empty-state .icon{font-size:40px;margin-bottom:12px;}
+.empty-state p{font-size:14px;line-height:1.6;}
+
+/* ── FOOTER ── */
+.site-footer{text-align:center;padding:28px 16px 30px;border-top:1px solid var(--border);margin-top:10px;}
+.footer-top{display:flex;justify-content:center;gap:28px;margin-bottom:14px;}
+.footer-top a{font-size:13px;color:var(--muted);text-decoration:none;transition:color .2s;}
+.footer-top a:hover{color:var(--text);}
+.footer-mid{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:18px;margin-bottom:14px;}
+.footer-mid a{font-size:13px;color:var(--muted);text-decoration:none;}
+.footer-lang{font-size:13px;color:var(--muted);}
+.footer-copy{font-size:12px;color:var(--muted);opacity:.65;}
+</style>
+</head>
+<body>
+
+<!-- ═══════ HEADER ═══════ -->
+<header>
+  <div class="header-top">
+    <div class="logo-wrap" onclick="goHome()">
+      <div class="logo">Predict<span>Sure</span></div>
+      <div class="logo-tag">Sure Predictions Today</div>
+    </div>
+    <div class="live-badge">● LIVE</div>
+  </div>
+  <nav class="top-nav">
+    <button class="tab-btn active" onclick="showPage('today',this)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Today</span>
+    </button>
+    <button class="tab-btn" onclick="showPage('results',this)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+      <span>Results</span>
+    </button>
+    <button class="tab-btn" onclick="showPage('bonuses',this)">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5" rx="1"/><path d="M12 22V7m0 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 0a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
+      <span>Bonuses</span>
+    </button>
+  </nav>
+</header>
+
+<!-- ═══════ PAGE: TODAY ═══════ -->
+<div id="page-today" class="page active">
+<main>
+  <div class="date-strip" id="today-date">📅 Loading...</div>
+
+  <!-- FREE TIP -->
+  <div class="sh"><div class="sh-dot"></div><div class="sh-title">Free Tip of the Day</div></div>
+  <div id="free-tip-container">
+    <div class="skeleton skel-tip"></div>
+  </div>
+
+  <!-- ACCA -->
+  <div class="acca-section">
+    <div class="acca-hdr">
+      <div class="sh" style="margin-bottom:0"><div class="sh-dot" style="background:var(--gold)"></div><div class="sh-title">3–4 Accumulator</div></div>
+      <div class="acca-badge">⚡ TODAY'S ACCA</div>
+    </div>
+    <div class="acca-card">
+      <div class="acca-top-bar">
+        <div class="acca-name">🏆 Daily Acca</div>
+        <div class="acca-odds-total" id="acca-total-odds">≈ –</div>
+      </div>
+      <div id="acca-legs-container">
+        <div class="skeleton skel-card" style="margin:10px 16px;width:calc(100% - 32px);"></div>
+        <div class="skeleton skel-card" style="margin:10px 16px;width:calc(100% - 32px);"></div>
+        <div class="skeleton skel-card" style="margin:10px 16px;width:calc(100% - 32px);"></div>
+        <div class="skeleton skel-card" style="margin:10px 16px;width:calc(100% - 32px);"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TELEGRAM CTA -->
+  <div class="tg-cta">
+    <div class="tg-wrap">
+      <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.447 1.394c-.16.16-.295.295-.605.295l.213-3.053 5.56-5.023c.242-.213-.054-.333-.373-.12L7.26 13.803l-2.948-.924c-.64-.203-.657-.64.136-.954l11.57-4.461c.537-.194 1.006.131.876.757z"/></svg>
+    </div>
+    <div class="tg-headline">Get Full Acca FREE</div>
+    <div class="tg-sub">Join our channel & unlock all <strong>4 legs</strong> every day for free</div>
+    <a class="tg-btn" id="tg-link" href="https://t.me/predictsure" target="_blank">📲 Join Our Telegram Channel</a>
+    <div class="tg-members">🟢 <span>12,400+</span> members already joined</div>
+  </div>
+
+  <!-- MINI BOOKMAKERS (loaded from DB) -->
+  <div class="sh"><div class="sh-dot" style="background:#a78bfa"></div><div class="sh-title">Recommended Bookmakers</div></div>
+  <div class="mini-bookie-list" id="mini-bookie-container">
+    <div class="skeleton skel-card" style="margin:10px 14px;width:calc(100% - 28px);"></div>
+    <div class="skeleton skel-card" style="margin:10px 14px;width:calc(100% - 28px);"></div>
+    <div class="skeleton skel-card" style="margin:10px 14px;width:calc(100% - 28px);"></div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-top"><a href="#">Leaderboards</a><a href="#">Methodology</a></div>
+    <div class="footer-mid"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Contact</a><span class="footer-lang">🌐 EN</span></div>
+    <div class="footer-copy">© 2026 PredictSure. All rights reserved.</div>
+  </footer>
+</main>
+</div>
+
+<!-- ═══════ PAGE: RESULTS ═══════ -->
+<div id="page-results" class="page">
+<main>
+  <div class="sh"><div class="sh-dot" style="background:var(--gold)"></div><div class="sh-title">Past Results History</div></div>
+
+  <div class="results-stats" id="results-stats">
+    <div class="stat-box"><div class="stat-num green" id="stat-winrate">–%</div><div class="stat-lbl">Win Rate</div></div>
+    <div class="stat-box"><div class="stat-num gold" id="stat-total">–</div><div class="stat-lbl">Total Tips</div></div>
+    <div class="stat-box"><div class="stat-num red" id="stat-lost">–</div><div class="stat-lbl">Lost</div></div>
+  </div>
+
+  <div class="results-filter">
+    <button class="rf-btn active" onclick="filterResults('all',this)">All</button>
+    <button class="rf-btn" onclick="filterResults('won',this)">Won ✓</button>
+    <button class="rf-btn" onclick="filterResults('lost',this)">Lost ✗</button>
+    <button class="rf-btn" onclick="filterResults('free',this)">Free Tips</button>
+    <button class="rf-btn" onclick="filterResults('acca',this)">Accas</button>
+  </div>
+
+  <div id="results-container">
+    <div class="skeleton skel-card"></div>
+    <div class="skeleton skel-card"></div>
+    <div class="skeleton skel-card"></div>
+    <div class="skeleton skel-card"></div>
+  </div>
+
+  <footer class="site-footer">
+    <div class="footer-top"><a href="#">Leaderboards</a><a href="#">Methodology</a></div>
+    <div class="footer-mid"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Contact</a><span class="footer-lang">🌐 EN</span></div>
+    <div class="footer-copy">© 2026 PredictSure. All rights reserved.</div>
+  </footer>
+</main>
+</div>
+
+<!-- ═══════ PAGE: BONUSES ═══════ -->
+<div id="page-bonuses" class="page">
+<main>
+  <div class="country-bar">
+    <div class="country-flag-icon" id="ctry-flag">🇳🇬</div>
+    <div class="country-info">
+      <div class="country-name-txt" id="ctry-name">Nigeria</div>
+      <div class="country-sub-txt">Showing best bonuses for your region</div>
+    </div>
+    <button class="country-change-btn" onclick="cycleCountry()">Change 🌐</button>
+  </div>
+  <div class="sh"><div class="sh-dot" style="background:#a78bfa"></div><div class="sh-title" id="bonus-region-title">Top Bookmakers · Nigeria</div></div>
+  <div class="bonus-list" id="bonus-list"></div>
+
+  <footer class="site-footer">
+    <div class="footer-top"><a href="#">Leaderboards</a><a href="#">Methodology</a></div>
+    <div class="footer-mid"><a href="#">Privacy</a><a href="#">Terms</a><a href="#">Contact</a><span class="footer-lang">🌐 EN</span></div>
+    <div class="footer-copy">© 2026 PredictSure. All rights reserved.</div>
+  </footer>
+</main>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// SUPABASE CLIENT
+// ═══════════════════════════════════════
+const supabase = window.supabase
+  ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
+  : null;
+
+const USE_DEMO = (SUPABASE_URL === 'YOUR_SUPABASE_URL'); // true until you connect DB
+
+// ═══════════════════════════════════════
+// DEMO DATA (used until Supabase is connected)
+// ═══════════════════════════════════════
+const DEMO = {
+  freeTip: { home:'Eritrea', away:'Eswatini', league:'NCQ', flag:'🌍', match_time:'17:00', tip:'2', odds:'1.85', is_free:true },
+  acca: [
+    { home:'Eritrea', away:'Eswatini', league:'NCQ', flag:'🌍', match_time:'17:00', tip:'2', is_locked:false },
+    { home:'Seychelles', away:'Lesotho', league:'NCQ', flag:'🌍', match_time:'15:00', tip:'X', is_locked:false },
+    { home:'Man City', away:'Arsenal', league:'EPL', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', match_time:'20:00', tip:'1', is_locked:true },
+    { home:'Real Madrid', away:'Atletico', league:'La Liga', flag:'🇪🇸', match_time:'21:00', tip:'X', is_locked:true },
+  ],
+  accaOdds: '8.50x',
+  results: [
+    { date:'2026-03-25', home:'Eritrea', away:'Eswatini', flag:'🌍', score_home:0, score_away:1, league:'NCQ', tip:'2', outcome:'won', is_acca:false },
+    { date:'2026-03-25', home:'Seychelles', away:'Lesotho', flag:'🌍', score_home:1, score_away:1, league:'NCQ', tip:'X', outcome:'won', is_acca:false },
+    { date:'2026-03-25', home:'Dep. Riestra', away:'San Lorenzo', flag:'🇦🇷', score_home:2, score_away:0, league:'Ar1', tip:'1', outcome:'lost', is_acca:false },
+    { date:'2026-03-24', home:'Man City', away:'Arsenal', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', score_home:3, score_away:1, league:'EPL', tip:'1', outcome:'won', is_acca:true },
+    { date:'2026-03-24', home:'Real Madrid', away:'Atletico', flag:'🇪🇸', score_home:2, score_away:2, league:'La Liga', tip:'X', outcome:'won', is_acca:false },
+    { date:'2026-03-24', home:'Bayern', away:'Dortmund', flag:'🇩🇪', score_home:4, score_away:0, league:'Bundesliga', tip:'1', outcome:'won', is_acca:true },
+    { date:'2026-03-24', home:'PSG', away:'Lyon', flag:'🇫🇷', score_home:1, score_away:2, league:'Ligue 1', tip:'1', outcome:'lost', is_acca:false },
+    { date:'2026-03-23', home:'Rivers Utd', away:'Enyimba', flag:'🇳🇬', score_home:2, score_away:0, league:'NPFL', tip:'1', outcome:'won', is_acca:false },
+    { date:'2026-03-23', home:'Inter', away:'Juventus', flag:'🇮🇹', score_home:3, score_away:1, league:'Serie A', tip:'1', outcome:'won', is_acca:false },
+    { date:'2026-03-23', home:'Sundowns', away:'Orlando Pirates', flag:'🌍', score_home:0, score_away:0, league:'PSL', tip:'X', outcome:'won', is_acca:false },
+    { date:'2026-03-22', home:'Benfica', away:'Porto', flag:'🇵🇹', score_home:2, score_away:1, league:'Primeira Liga', tip:'1', outcome:'won', is_acca:false },
+    { date:'2026-03-22', home:'Liverpool', away:'Chelsea', flag:'🏴󠁧󠁢󠁥󠁮󠁧󠁿', score_home:0, score_away:1, league:'EPL', tip:'1', outcome:'lost', is_acca:false },
+  ],
+  bookmakers: {
+    NG:[
+      { rank:1,name:'Bet9ja',logo:'BET9JA',bg:'#006633',fg:'#fff',rating:4.8,stars:'★★★★★',bonus:'100% up to ₦100,000',desc:'First deposit welcome bonus',tags:['fast','mobile','live'],top:true,url:'#' },
+      { rank:2,name:'1xBet Nigeria',logo:'1XBET',bg:'#1a1a2e',fg:'#e94560',rating:4.6,stars:'★★★★½',bonus:'200% up to ₦50,000',desc:'Welcome package + free bets',tags:['live','crypto','mobile'],top:false,url:'#' },
+      { rank:3,name:'SportyBet',logo:'SPORTY',bg:'#1a1a1a',fg:'#f0c040',rating:4.5,stars:'★★★★½',bonus:'₦300 Free Bet',desc:'No deposit needed',tags:['mobile','fast'],top:false,url:'#' },
+      { rank:4,name:'Betway NG',logo:'BETWAY',bg:'#0f3460',fg:'#e2b714',rating:4.3,stars:'★★★★☆',bonus:'100% up to ₦30,000',desc:'Sports welcome bonus',tags:['live','cash'],top:false,url:'#' },
+      { rank:5,name:'22Bet',logo:'22BET',bg:'#162040',fg:'#00d4ff',rating:4.1,stars:'★★★★☆',bonus:'100% up to ₦20,000',desc:'First deposit match',tags:['crypto','live'],top:false,url:'#' },
+      { rank:6,name:'Nairabet',logo:'NAIRA',bg:'#006400',fg:'#ffd700',rating:3.9,stars:'★★★☆☆',bonus:'₦10,000 Free Bet',desc:'For new customers',tags:['mobile','fast'],top:false,url:'#' },
+    ],
+    GH:[
+      { rank:1,name:'Betway Ghana',logo:'BETWAY',bg:'#0f3460',fg:'#e2b714',rating:4.8,stars:'★★★★★',bonus:'100% up to GH₵500',desc:'Welcome sports bonus',tags:['mobile','fast','live'],top:true,url:'#' },
+      { rank:2,name:'1xBet Ghana',logo:'1XBET',bg:'#1a1a2e',fg:'#e94560',rating:4.6,stars:'★★★★½',bonus:'200% up to GH₵300',desc:'New player package',tags:['live','crypto'],top:false,url:'#' },
+      { rank:3,name:'BetPawa',logo:'BETPAWA',bg:'#003d1a',fg:'#00ff6a',rating:4.4,stars:'★★★★☆',bonus:'GH₵1 minimum bet',desc:'Low stake, big wins',tags:['mobile','fast'],top:false,url:'#' },
+      { rank:4,name:'Soccabet',logo:'SOCCA',bg:'#8b0000',fg:'#fff',rating:4.1,stars:'★★★★☆',bonus:'50% up to GH₵200',desc:'First deposit offer',tags:['live','cash'],top:false,url:'#' },
+    ],
+    ZA:[
+      { rank:1,name:'Betway SA',logo:'BETWAY',bg:'#0f3460',fg:'#e2b714',rating:4.9,stars:'★★★★★',bonus:'R1,000 Free Bet',desc:'New account bonus',tags:['mobile','fast','live'],top:true,url:'#' },
+      { rank:2,name:'Hollywoodbets',logo:'HOLLY',bg:'#6a0dad',fg:'#fff',rating:4.7,stars:'★★★★½',bonus:'R25 Free Bet',desc:'No deposit required',tags:['cash','mobile'],top:false,url:'#' },
+      { rank:3,name:'Supabets',logo:'SUPA',bg:'#c0392b',fg:'#fff',rating:4.3,stars:'★★★★☆',bonus:'100% up to R500',desc:'First deposit bonus',tags:['fast','live'],top:false,url:'#' },
+    ],
+    GB:[
+      { rank:1,name:'Bet365',logo:'BET365',bg:'#1b6b2e',fg:'#fff',rating:4.9,stars:'★★★★★',bonus:'Up to £50 Bonus',desc:'Bet £10 get £50 in free bets',tags:['live','cash','mobile'],top:true,url:'#' },
+      { rank:2,name:'William Hill',logo:'WH',bg:'#002060',fg:'#f7c948',rating:4.7,stars:'★★★★½',bonus:'£30 in Free Bets',desc:'New customer offer',tags:['live','fast'],top:false,url:'#' },
+      { rank:3,name:'Betway UK',logo:'BETWAY',bg:'#0f3460',fg:'#e2b714',rating:4.6,stars:'★★★★½',bonus:'£30 Free Bet',desc:'Welcome bonus',tags:['mobile','cash'],top:false,url:'#' },
+      { rank:4,name:'Paddy Power',logo:'PP',bg:'#008000',fg:'#fff',rating:4.4,stars:'★★★★☆',bonus:'£20 Risk Free',desc:'New customer deal',tags:['live','cash'],top:false,url:'#' },
+    ],
+    INT:[
+      { rank:1,name:'1xBet',logo:'1XBET',bg:'#1a1a2e',fg:'#e94560',rating:4.7,stars:'★★★★½',bonus:'200% up to $100',desc:'Welcome package + free bets',tags:['live','crypto','mobile'],top:true,url:'#' },
+      { rank:2,name:'Betway',logo:'BETWAY',bg:'#0f3460',fg:'#e2b714',rating:4.5,stars:'★★★★½',bonus:'$30 Free Bet',desc:'Sports welcome bonus',tags:['live','cash','fast'],top:false,url:'#' },
+      { rank:3,name:'Bet365',logo:'BET365',bg:'#1b6b2e',fg:'#fff',rating:4.5,stars:'★★★★½',bonus:'Up to $50 Bonus',desc:'New customer offer',tags:['live','mobile'],top:false,url:'#' },
+      { rank:4,name:'Parimatch',logo:'PARI',bg:'#0d2137',fg:'#00d4ff',rating:4.2,stars:'★★★★☆',bonus:'150% up to $75',desc:'First deposit match',tags:['mobile','crypto'],top:false,url:'#' },
+      { rank:5,name:'22Bet',logo:'22BET',bg:'#162040',fg:'#00d4ff',rating:4.0,stars:'★★★★☆',bonus:'100% up to $50',desc:'Welcome deposit bonus',tags:['crypto','fast'],top:false,url:'#' },
+    ]
+  }
+};
+
+// ═══════════════════════════════════════
+// DATA LAYER — fetches from Supabase or falls back to DEMO
+// ═══════════════════════════════════════
+async function fetchTodayTip() {
+  if (USE_DEMO) return DEMO.freeTip;
+  const today = new Date().toISOString().split('T')[0];
+  const { data } = await supabase.from('predictions')
+    .select('*').eq('is_free', true).eq('match_date', today).limit(1).single();
+  return data || DEMO.freeTip;
+}
+
+async function fetchAccaLegs() {
+  if (USE_DEMO) return { legs: DEMO.acca, totalOdds: DEMO.accaOdds };
+  const today = new Date().toISOString().split('T')[0];
+  const { data } = await supabase.from('predictions')
+    .select('*').eq('is_acca', true).eq('match_date', today).order('acca_position');
+  return { legs: data || DEMO.acca, totalOdds: '–' };
+}
+
+async function fetchResults(filter = 'all') {
+  if (USE_DEMO) {
+    let r = DEMO.results;
+    if (filter === 'won') r = r.filter(x => x.outcome === 'won');
+    if (filter === 'lost') r = r.filter(x => x.outcome === 'lost');
+    if (filter === 'free') r = r.filter(x => !x.is_acca);
+    if (filter === 'acca') r = r.filter(x => x.is_acca);
+    return r;
+  }
+  let q = supabase.from('results')
+    .select('*, predictions(home, away, league, flag, tip, is_acca)')
+    .order('settled_at', { ascending: false }).limit(50);
+  if (filter === 'won') q = q.eq('outcome', 'won');
+  if (filter === 'lost') q = q.eq('outcome', 'lost');
+  const { data } = await q;
+  return data || [];
+}
+
+async function fetchBookmakers(countryCode) {
+  if (USE_DEMO) return DEMO.bookmakers[countryCode] || DEMO.bookmakers.INT;
+  const { data } = await supabase.from('bookmakers')
+    .select('*').eq('is_active', true)
+    .or(`country_codes.cs.{${countryCode}},country_codes.cs.{ALL}`)
+    .order('rank');
+  return data || DEMO.bookmakers[countryCode] || DEMO.bookmakers.INT;
+}
+
+// ═══════════════════════════════════════
+// RENDER FUNCTIONS
+// ═══════════════════════════════════════
+function renderFreeTip(tip) {
+  document.getElementById('free-tip-container').innerHTML = `
+    <div class="free-tip-card">
+      <div class="free-tip-label">✅ FREE PICK</div>
+      <div class="tip-row">
+        <div class="flag">${tip.flag || '⚽'}</div>
+        <div class="tip-info">
+          <div class="tip-teams">${tip.home} vs ${tip.away}</div>
+          <div class="tip-meta">${tip.league} · ${tip.match_time}</div>
+        </div>
+        <div class="tip-pick">${tip.tip}</div>
+        <div class="tip-odds">${tip.odds}</div>
+      </div>
+    </div>`;
+}
+
+function renderAccaLegs(legs, totalOdds) {
+  document.getElementById('acca-total-odds').textContent = '≈ ' + totalOdds;
+  document.getElementById('acca-legs-container').innerHTML = legs.map((leg, i) => {
+    if (leg.is_locked) {
+      return `<div class="acca-row locked-game">
+        <div class="acca-num" style="opacity:.4">${i+1}</div>
+        <div class="acca-info">
+          <div class="acca-teams">${leg.home} vs ${leg.away}</div>
+          <div class="acca-detail">${leg.league} · ${leg.match_time}</div>
+        </div>
+        <div class="acca-pick-locked">🔒</div>
+      </div>`;
+    }
+    return `<div class="acca-row">
+      <div class="acca-num">${i+1}</div>
+      <div class="acca-info">
+        <div class="acca-teams">${leg.home} vs ${leg.away}</div>
+        <div class="acca-detail">${leg.league} · ${leg.match_time}</div>
+      </div>
+      <div class="acca-pick">${leg.tip}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderMiniBookmakers(list) {
+  const top5 = list.slice(0, 5);
+  document.getElementById('mini-bookie-container').innerHTML = top5.map((bk, i) => `
+    <div class="mini-bookie-row">
+      <div class="mini-rank">${i+1}</div>
+      <div class="mini-logo" style="background:${bk.bg};color:${bk.fg}">${bk.logo}</div>
+      <div class="mini-info">
+        <div class="mini-name">${bk.name}</div>
+        <div class="mini-bonus">${bk.bonus}</div>
+      </div>
+      <a class="mini-claim" href="${bk.url || '#'}" target="_blank">Claim</a>
+    </div>`).join('');
+}
+
+let allResults = [];
+function renderResults(list) {
+  allResults = list;
+  const won = list.filter(r => r.outcome === 'won').length;
+  const lost = list.filter(r => r.outcome === 'lost').length;
+  const total = list.length;
+  const winRate = total > 0 ? Math.round((won/total)*100) : 0;
+  document.getElementById('stat-winrate').textContent = winRate + '%';
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-lost').textContent = lost;
+
+  if (!list.length) {
+    document.getElementById('results-container').innerHTML =
+      `<div class="empty-state"><div class="icon">📋</div><p>No results yet.<br>Check back after today's games.</p></div>`;
+    return;
+  }
+
+  // Group by date
+  const groups = {};
+  list.forEach(r => {
+    const d = r.date || r.settled_at?.split('T')[0] || 'Unknown';
+    if (!groups[d]) groups[d] = [];
+    groups[d].push(r);
+  });
+
+  const dateLabel = (d) => {
+    try { return new Date(d).toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'}); }
+    catch { return d; }
+  };
+
+  const badgeCls = { won:'badge-win', lost:'badge-loss', void:'badge-void' };
+  const badgeTxt = { won:'✓ WON', lost:'✗ LOST', void:'— VOID' };
+
+  document.getElementById('results-container').innerHTML = Object.entries(groups).map(([date, rows]) => `
+    <div class="results-group">
+      <div class="rg-date">📅 ${dateLabel(date)}</div>
+      ${rows.map(r => `
+        <div class="result-row">
+          <div class="result-flag">${r.flag || '⚽'}</div>
+          <div class="result-info">
+            <div class="result-teams">${r.home || r.predictions?.home} <span class="result-score">${r.score_home} – ${r.score_away}</span> ${r.away || r.predictions?.away}</div>
+            <div class="result-meta">${r.league || r.predictions?.league} · Pick: <b>${r.tip || r.predictions?.tip}</b>${r.is_acca || r.predictions?.is_acca ? ' · Acca' : ''}</div>
+          </div>
+          <div class="result-badge ${badgeCls[r.outcome] || 'badge-void'}">${badgeTxt[r.outcome] || '–'}</div>
+        </div>`).join('')}
+    </div>`).join('');
+}
+
+async function filterResults(type, btn) {
+  document.querySelectorAll('.rf-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const data = await fetchResults(type);
+  renderResults(data);
+}
+
+// ═══════════════════════════════════════
+// BONUS PAGE
+// ═══════════════════════════════════════
+const TAG_CLS = {live:'tag-live',cash:'tag-cash',mobile:'tag-mobile',crypto:'tag-crypto',fast:'tag-fast'};
+const TAG_LBL = {live:'Live Betting',cash:'Cash Out',mobile:'Mobile App',crypto:'Crypto',fast:'Fast Pay'};
+const COUNTRY_FLAGS = {NG:'🇳🇬',GH:'🇬🇭',ZA:'🇿🇦',GB:'🇬🇧',INT:'🌍'};
+const COUNTRY_NAMES = {NG:'Nigeria',GH:'Ghana',ZA:'South Africa',GB:'United Kingdom',INT:'International'};
+const COUNTRY_ORDER = ['NG','GH','ZA','GB','INT'];
+let currentCountryIdx = 0;
+
+async function renderBonuses(code) {
+  document.getElementById('ctry-flag').textContent = COUNTRY_FLAGS[code] || '🌍';
+  document.getElementById('ctry-name').textContent = COUNTRY_NAMES[code] || 'International';
+  document.getElementById('bonus-region-title').textContent = 'Top Bookmakers · ' + (COUNTRY_NAMES[code] || 'International');
+  const list = await fetchBookmakers(code);
+  document.getElementById('bonus-list').innerHTML = list.map(bk => `
+    <div class="bonus-card ${bk.top || bk.is_top ? 'top-pick' : ''}">
+      ${(bk.top || bk.is_top) ? '<div class="bonus-top-tag">🏆 #1 Recommended in Your Region</div>' : ''}
+      <div class="bonus-body">
+        <div class="bonus-row1">
+          <div class="bk-logo" style="background:${bk.bg || bk.logo_bg};color:${bk.fg || bk.logo_color}">${bk.logo || bk.logo_text}</div>
+          <div class="bk-info">
+            <div class="bk-name">${bk.name}</div>
+            <div class="bk-rating"><span class="bk-stars">${bk.stars || '★★★★☆'}</span><span class="bk-score">${bk.rating}/5</span></div>
+          </div>
+          <div class="bk-rank">${bk.rank}</div>
+        </div>
+        <div class="bonus-pill">
+          <div class="bonus-pill-icon">🎁</div>
+          <div class="bonus-pill-text">
+            <div class="bonus-pill-amount">${bk.bonus || bk.bonus_text}</div>
+            <div class="bonus-pill-desc">${bk.desc || bk.bonus_desc}</div>
+          </div>
+        </div>
+        <div class="bonus-tags">${(bk.tags||[]).map(t=>`<span class="bonus-tag ${TAG_CLS[t]||''}">${TAG_LBL[t]||t}</span>`).join('')}</div>
+        <a class="claim-btn" href="${bk.url || bk.affiliate_url || '#'}" target="_blank" rel="noopener">Claim Bonus →</a>
+      </div>
+    </div>`).join('');
+}
+
+function cycleCountry() {
+  currentCountryIdx = (currentCountryIdx + 1) % COUNTRY_ORDER.length;
+  renderBonuses(COUNTRY_ORDER[currentCountryIdx]);
+}
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function showPage(name, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  btn.classList.add('active');
+  if (name === 'results') loadResults();
+  if (name === 'bonuses') renderBonuses(COUNTRY_ORDER[currentCountryIdx]);
+}
+
+function goHome() {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-today').classList.add('active');
+  document.querySelectorAll('.tab-btn')[0].classList.add('active');
+}
+
+// ═══════════════════════════════════════
+// BOOT — load everything on page open
+// ═══════════════════════════════════════
+async function loadResults() {
+  const data = await fetchResults('all');
+  renderResults(data);
+}
+
+(async function boot() {
+  // Date label
+  document.getElementById('today-date').textContent =
+    '📅 ' + new Date().toLocaleDateString('en-GB', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+  // Detect country
+  const tz = Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+  if (tz.includes('Lagos') || tz.includes('Abuja')) currentCountryIdx = 0;
+  else if (tz.includes('Accra')) currentCountryIdx = 1;
+  else if (tz.includes('Johannesburg')) currentCountryIdx = 2;
+  else if (tz.includes('London')) currentCountryIdx = 3;
+  else currentCountryIdx = 4;
+
+  // Load today page data in parallel
+  const [tip, accaData, bkList] = await Promise.all([
+    fetchTodayTip(),
+    fetchAccaLegs(),
+    fetchBookmakers(COUNTRY_ORDER[currentCountryIdx])
+  ]);
+
+  renderFreeTip(tip);
+  renderAccaLegs(accaData.legs, accaData.totalOdds);
+  renderMiniBookmakers(bkList);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow"><!-- Hidden from Google -->
+<title>PS Admin</title>
+<script>
+  const SUPABASE_URL = 'YOUR_SUPABASE_URL';
+  const SUPABASE_ANON_KEY = 'YOUR_SUPABASE_ANON_KEY';
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;}
+:root{
+  --bg:#0f1117;--sidebar:#0a0c12;--card:#161b26;--card2:#1e2535;
+  --border:#252d3d;--green:#00e676;--gold:#ffc107;--red:#ff4757;
+  --blue:#3b82f6;--text:#e2e8f0;--muted:#64748b;--purple:#8b5cf6;
+}
+body{background:var(--bg);font-family:'Segoe UI',system-ui,sans-serif;color:var(--text);min-height:100vh;}
+
+/* ── LOGIN ── */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;}
+.login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:40px 32px;width:100%;max-width:360px;text-align:center;}
+.login-logo{font-size:28px;font-weight:800;letter-spacing:2px;color:var(--text);margin-bottom:4px;}
+.login-logo span{color:var(--green);}
+.login-sub{font-size:12px;color:var(--muted);margin-bottom:28px;letter-spacing:1px;text-transform:uppercase;}
+.login-box input{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:12px 14px;color:var(--text);font-size:14px;margin-bottom:12px;outline:none;transition:border .2s;}
+.login-box input:focus{border-color:var(--green);}
+.login-btn{width:100%;background:var(--green);color:#000;font-weight:700;font-size:15px;border:none;border-radius:8px;padding:13px;cursor:pointer;transition:opacity .2s;margin-top:4px;}
+.login-btn:hover{opacity:.9;}
+.login-err{color:var(--red);font-size:13px;margin-top:10px;display:none;}
+
+/* ── LAYOUT ── */
+#admin-screen{display:none;min-height:100vh;}
+.admin-header{background:var(--sidebar);border-bottom:1px solid var(--border);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.admin-logo{font-size:18px;font-weight:800;letter-spacing:1px;}
+.admin-logo span{color:var(--green);}
+.admin-user{font-size:12px;color:var(--muted);}
+.logout-btn{background:rgba(255,71,87,.15);color:var(--red);border:1px solid rgba(255,71,87,.25);border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer;transition:background .2s;}
+.logout-btn:hover{background:rgba(255,71,87,.25);}
+
+.admin-body{display:flex;min-height:calc(100vh - 57px);}
+
+/* sidebar */
+.sidebar{width:200px;background:var(--sidebar);border-right:1px solid var(--border);padding:16px 0;flex-shrink:0;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:11px 18px;cursor:pointer;color:var(--muted);font-size:14px;font-weight:500;transition:all .2s;border-left:3px solid transparent;}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,.03);}
+.nav-item.active{color:var(--green);border-left-color:var(--green);background:rgba(0,230,118,.05);}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;}
+
+/* content */
+.content{flex:1;padding:24px 20px;max-width:820px;}
+
+/* panels */
+.panel{display:none;}
+.panel.active{display:block;}
+
+/* cards */
+.card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:20px;}
+.card-title{font-size:15px;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.card-title .dot{width:8px;height:8px;border-radius:50%;}
+
+/* form fields */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.form-group{display:flex;flex-direction:column;gap:5px;}
+.form-group.full{grid-column:1/-1;}
+label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+input,select,textarea{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:13px;outline:none;transition:border .2s;font-family:inherit;width:100%;}
+input:focus,select:focus,textarea:focus{border-color:var(--green);}
+select option{background:var(--card2);}
+textarea{resize:vertical;min-height:60px;}
+
+/* toggle */
+.toggle-wrap{display:flex;align-items:center;gap:8px;margin-top:4px;}
+.toggle{position:relative;width:40px;height:22px;cursor:pointer;}
+.toggle input{opacity:0;width:0;height:0;}
+.toggle-slider{position:absolute;inset:0;background:var(--border);border-radius:22px;transition:.3s;}
+.toggle-slider::before{content:'';position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s;}
+.toggle input:checked + .toggle-slider{background:var(--green);}
+.toggle input:checked + .toggle-slider::before{transform:translateX(18px);}
+.toggle-label{font-size:13px;color:var(--muted);}
+
+/* buttons */
+.btn{padding:10px 18px;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .2s;display:inline-flex;align-items:center;gap:6px;}
+.btn-green{background:var(--green);color:#000;}
+.btn-green:hover{opacity:.88;}
+.btn-blue{background:var(--blue);color:#fff;}
+.btn-blue:hover{opacity:.88;}
+.btn-red{background:rgba(255,71,87,.15);color:var(--red);border:1px solid rgba(255,71,87,.25);}
+.btn-red:hover{background:rgba(255,71,87,.25);}
+.btn-sm{padding:6px 12px;font-size:12px;}
+.btn:disabled{opacity:.4;cursor:not-allowed;}
+
+/* stat cards */
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;}
+.stat-card .num{font-size:28px;font-weight:800;margin-bottom:2px;}
+.stat-card .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.num.green{color:var(--green);}.num.gold{color:var(--gold);}.num.red{color:var(--red);}.num.blue{color:var(--blue);}
+
+/* table */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:13px;}
+th{text-align:left;padding:10px 12px;font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;border-bottom:1px solid var(--border);}
+td{padding:11px 12px;border-bottom:1px solid rgba(37,45,61,.5);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.02);}
+
+/* badges */
+.badge{display:inline-block;padding:3px 8px;border-radius:4px;font-size:11px;font-weight:700;letter-spacing:.3px;}
+.badge-won{background:rgba(0,230,118,.12);color:var(--green);border:1px solid rgba(0,230,118,.25);}
+.badge-lost{background:rgba(255,71,87,.12);color:var(--red);border:1px solid rgba(255,71,87,.25);}
+.badge-pending{background:rgba(255,193,7,.12);color:var(--gold);border:1px solid rgba(255,193,7,.25);}
+.badge-free{background:rgba(59,130,246,.12);color:var(--blue);border:1px solid rgba(59,130,246,.25);}
+.badge-acca{background:rgba(139,92,246,.12);color:var(--purple);border:1px solid rgba(139,92,246,.25);}
+
+/* toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px 18px;font-size:13px;font-weight:600;z-index:999;transform:translateY(80px);opacity:0;transition:all .3s;}
+.toast.show{transform:translateY(0);opacity:1;}
+.toast.success{border-color:var(--green);color:var(--green);}
+.toast.error{border-color:var(--red);color:var(--red);}
+
+/* acca leg builder */
+.leg-card{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:10px;position:relative;}
+.leg-num{position:absolute;top:10px;right:12px;font-size:11px;color:var(--muted);font-weight:700;}
+.leg-lock-row{display:flex;align-items:center;gap:8px;margin-top:10px;}
+
+@media(max-width:640px){
+  .sidebar{display:none;}
+  .stats-row{grid-template-columns:1fr 1fr;}
+  .form-grid{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ LOGIN ═══ -->
+<div id="login-screen">
+  <div class="login-box">
+    <div class="login-logo">Predict<span>Sure</span></div>
+    <div class="login-sub">Admin Portal</div>
+    <input type="email" id="email" placeholder="Admin email" autocomplete="email">
+    <input type="password" id="password" placeholder="Password" autocomplete="current-password">
+    <button class="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="login-err">Invalid credentials. Try again.</div>
+  </div>
+</div>
+
+<!-- ═══ ADMIN ═══ -->
+<div id="admin-screen">
+  <div class="admin-header">
+    <div class="admin-logo">Predict<span>Sure</span> <span style="color:var(--muted);font-weight:400;font-size:13px">Admin</span></div>
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div class="admin-user" id="admin-email"></div>
+      <button class="logout-btn" onclick="doLogout()">Sign out</button>
+    </div>
+  </div>
+
+  <div class="admin-body">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="nav-item active" onclick="showPanel('dashboard',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </div>
+      <div class="nav-item" onclick="showPanel('post-tip',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>
+        Post Tip
+      </div>
+      <div class="nav-item" onclick="showPanel('post-acca',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+        Post Acca
+      </div>
+      <div class="nav-item" onclick="showPanel('results',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+        Update Results
+      </div>
+      <div class="nav-item" onclick="showPanel('bookmakers',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5" rx="1"/></svg>
+        Bookmakers
+      </div>
+      <div class="nav-item" onclick="showPanel('telegram',this)">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        Telegram Link
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- DASHBOARD -->
+      <div class="panel active" id="panel-dashboard">
+        <div class="stats-row" id="dash-stats">
+          <div class="stat-card"><div class="num green" id="ds-tips">–</div><div class="lbl">Tips Today</div></div>
+          <div class="stat-card"><div class="num gold" id="ds-total">–</div><div class="lbl">Total Tips</div></div>
+          <div class="stat-card"><div class="num blue" id="ds-winrate">–%</div><div class="lbl">Win Rate</div></div>
+          <div class="stat-card"><div class="num red" id="ds-pending">–</div><div class="lbl">Pending Results</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><div class="dot" style="background:var(--gold)"></div> Recent Predictions</div>
+          <div class="table-wrap">
+            <table id="recent-table">
+              <thead><tr><th>Match</th><th>League</th><th>Tip</th><th>Type</th><th>Result</th></tr></thead>
+              <tbody id="recent-tbody"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- POST FREE TIP -->
+      <div class="panel" id="panel-post-tip">
+        <div class="card">
+          <div class="card-title"><div class="dot" style="background:var(--green)"></div> Post Free Tip of the Day</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Home Team</label>
+              <input id="tip-home" placeholder="e.g. Man City" type="text">
+            </div>
+            <div class="form-group">
+              <label>Away Team</label>
+              <input id="tip-away" placeholder="e.g. Arsenal" type="text">
+            </div>
+            <div class="form-group">
+              <label>League / Competition</label>
+              <input id="tip-league" placeholder="e.g. EPL, La Liga, NCQ" type="text">
+            </div>
+            <div class="form-group">
+              <label>Flag Emoji</label>
+              <input id="tip-flag" placeholder="e.g. 🏴󠁧󠁢󠁥󠁮󠁧󠁿 🇳🇬 🌍" type="text">
+            </div>
+            <div class="form-group">
+              <label>Match Date</label>
+              <input id="tip-date" type="date">
+            </div>
+            <div class="form-group">
+              <label>Kick-off Time</label>
+              <input id="tip-time" type="time">
+            </div>
+            <div class="form-group">
+              <label>Prediction (Tip)</label>
+              <select id="tip-pick">
+                <option value="1">1 — Home Win</option>
+                <option value="X">X — Draw</option>
+                <option value="2">2 — Away Win</option>
+                <option value="1X">1X — Home or Draw</option>
+                <option value="X2">X2 — Away or Draw</option>
+                <option value="GG">GG — Both Teams to Score</option>
+                <option value="NG">NG — No Goal</option>
+                <option value="O2.5">Over 2.5</option>
+                <option value="U2.5">Under 2.5</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Odds</label>
+              <input id="tip-odds" placeholder="e.g. 1.85" type="number" step="0.01" min="1">
+            </div>
+          </div>
+          <div style="margin-top:16px">
+            <button class="btn btn-green" onclick="postFreeTip()">✅ Publish Free Tip</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- POST ACCA -->
+      <div class="panel" id="panel-post-acca">
+        <div class="card">
+          <div class="card-title"><div class="dot" style="background:var(--gold)"></div> Post Today's Accumulator</div>
+
+          <div class="form-grid" style="margin-bottom:16px">
+            <div class="form-group">
+              <label>Match Date</label>
+              <input id="acca-date" type="date">
+            </div>
+            <div class="form-group">
+              <label>Total Odds (display)</label>
+              <input id="acca-total-odds" placeholder="e.g. 8.50" type="text">
+            </div>
+          </div>
+
+          <div id="acca-legs"></div>
+
+          <div style="display:flex;gap:10px;margin-top:4px">
+            <button class="btn btn-blue" onclick="addLeg()">+ Add Leg</button>
+            <button class="btn btn-green" onclick="postAcca()">🏆 Publish Acca</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- UPDATE RESULTS -->
+      <div class="panel" id="panel-results">
+        <div class="card">
+          <div class="card-title"><div class="dot" style="background:var(--blue)"></div> Pending Results — Settle Outcomes</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Match</th><th>Tip</th><th>Score</th><th>Outcome</th><th>Action</th></tr></thead>
+              <tbody id="pending-tbody"><tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- BOOKMAKERS -->
+      <div class="panel" id="panel-bookmakers">
+        <div class="card">
+          <div class="card-title"><div class="dot" style="background:#a78bfa)"></div> Add / Edit Bookmaker</div>
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Bookmaker Name</label>
+              <input id="bk-name" placeholder="e.g. Bet9ja" type="text">
+            </div>
+            <div class="form-group">
+              <label>Logo Text (short)</label>
+              <input id="bk-logo" placeholder="e.g. BET9JA" type="text" maxlength="8">
+            </div>
+            <div class="form-group">
+              <label>Logo Background Color</label>
+              <input id="bk-bg" type="color" value="#006633">
+            </div>
+            <div class="form-group">
+              <label>Logo Text Color</label>
+              <input id="bk-fg" type="color" value="#ffffff">
+            </div>
+            <div class="form-group">
+              <label>Bonus Headline</label>
+              <input id="bk-bonus" placeholder="e.g. 100% up to ₦100,000" type="text">
+            </div>
+            <div class="form-group">
+              <label>Bonus Description</label>
+              <input id="bk-desc" placeholder="e.g. First deposit bonus" type="text">
+            </div>
+            <div class="form-group full">
+              <label>Your Affiliate / Referral Link</label>
+              <input id="bk-url" placeholder="https://your-affiliate-link.com/?ref=predictsure" type="url">
+            </div>
+            <div class="form-group">
+              <label>Country Codes (comma separated)</label>
+              <input id="bk-countries" placeholder="NG, GH, ALL" type="text">
+            </div>
+            <div class="form-group">
+              <label>Rank (display order)</label>
+              <input id="bk-rank" placeholder="1" type="number" min="1">
+            </div>
+            <div class="form-group">
+              <label>Rating (1–5)</label>
+              <input id="bk-rating" placeholder="4.8" type="number" step="0.1" min="1" max="5">
+            </div>
+            <div class="form-group">
+              <label>Tags (comma separated)</label>
+              <input id="bk-tags" placeholder="live, mobile, fast, cash, crypto" type="text">
+            </div>
+            <div class="form-group">
+              <label>Status</label>
+              <div class="toggle-wrap">
+                <label class="toggle"><input type="checkbox" id="bk-active" checked><span class="toggle-slider"></span></label>
+                <span class="toggle-label">Active (visible on site)</span>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Top Pick for Region?</label>
+              <div class="toggle-wrap">
+                <label class="toggle"><input type="checkbox" id="bk-top"><span class="toggle-slider"></span></label>
+                <span class="toggle-label">Show #1 Recommended badge</span>
+              </div>
+            </div>
+          </div>
+          <div style="margin-top:16px">
+            <button class="btn btn-green" onclick="saveBookmaker()">💾 Save Bookmaker</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><div class="dot" style="background:#a78bfa"></div> All Bookmakers</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>#</th><th>Name</th><th>Countries</th><th>Bonus</th><th>Active</th><th>Actions</th></tr></thead>
+              <tbody id="bk-tbody"><tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">Loading...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- TELEGRAM LINK -->
+      <div class="panel" id="panel-telegram">
+        <div class="card">
+          <div class="card-title"><div class="dot" style="background:var(--tg,#229ed9)"></div> Telegram Channel Link</div>
+          <p style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.6">
+            Update your Telegram link here. It will automatically update on the website without touching any code.
+          </p>
+          <div class="form-group">
+            <label>Telegram Channel URL</label>
+            <input id="tg-url" placeholder="https://t.me/yourchannel" type="url">
+          </div>
+          <div style="margin-top:16px">
+            <button class="btn btn-green" onclick="saveTelegramLink()">💾 Save Link</button>
+          </div>
+          <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);">
+            <p style="font-size:12px;color:var(--muted);">
+              💡 <strong>Best practice:</strong> Create a free Telegram channel at <a href="https://t.me" target="_blank" style="color:var(--blue)">t.me</a>.
+              Name it <b>PredictSure Tips</b> and post your full acca there daily.
+              The CTA button on your website links directly to it.
+            </p>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /content -->
+  </div><!-- /admin-body -->
+</div><!-- /admin-screen -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script>
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUser = null;
+
+// ═══ AUTH ═══
+async function doLogin() {
+  const email = document.getElementById('email').value.trim();
+  const pass  = document.getElementById('password').value;
+  const err   = document.getElementById('login-err');
+  err.style.display = 'none';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) { err.style.display = 'block'; return; }
+  currentUser = data.user;
+  document.getElementById('admin-email').textContent = currentUser.email;
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('admin-screen').style.display = 'block';
+  loadDashboard();
+  loadPendingResults();
+  loadBookmakersTable();
+}
+
+async function doLogout() {
+  await sb.auth.signOut();
+  location.reload();
+}
+
+// Check if already logged in
+sb.auth.getSession().then(({ data: { session } }) => {
+  if (session) {
+    currentUser = session.user;
+    document.getElementById('admin-email').textContent = currentUser.email;
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-screen').style.display = 'block';
+    loadDashboard();
+    loadPendingResults();
+    loadBookmakersTable();
+  }
+});
+
+// Enter key on login
+document.getElementById('password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+
+// ═══ NAVIGATION ═══
+function showPanel(name, el) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  el.classList.add('active');
+}
+
+// ═══ TOAST ═══
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+// ═══ DASHBOARD ═══
+async function loadDashboard() {
+  const today = new Date().toISOString().split('T')[0];
+
+  const { data: allPreds } = await sb.from('predictions').select('id');
+  const { data: todayPreds } = await sb.from('predictions').select('id').eq('match_date', today);
+  const { data: results } = await sb.from('results').select('outcome');
+  const { data: pending } = await sb.from('predictions').select('id')
+    .not('id', 'in', `(select prediction_id from results)`).lte('match_date', today);
+
+  const won = (results || []).filter(r => r.outcome === 'won').length;
+  const total = (results || []).length;
+
+  document.getElementById('ds-tips').textContent = (todayPreds || []).length;
+  document.getElementById('ds-total').textContent = (allPreds || []).length;
+  document.getElementById('ds-winrate').textContent = total ? Math.round(won/total*100) + '%' : '–%';
+  document.getElementById('ds-pending').textContent = (pending || []).length;
+
+  // Recent predictions table
+  const { data: recent } = await sb.from('predictions').select('*, results(outcome,score_home,score_away)')
+    .order('created_at', { ascending: false }).limit(10);
+
+  const tbody = document.getElementById('recent-tbody');
+  if (!recent?.length) { tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">No predictions yet</td></tr>'; return; }
+  tbody.innerHTML = recent.map(p => {
+    const r = p.results?.[0];
+    const badge = r ? `<span class="badge badge-${r.outcome}">${r.outcome?.toUpperCase()}</span>` : '<span class="badge badge-pending">PENDING</span>';
+    const type = p.is_acca ? '<span class="badge badge-acca">ACCA</span>' : '<span class="badge badge-free">FREE</span>';
+    return `<tr>
+      <td><b>${p.home}</b> vs <b>${p.away}</b><br><span style="color:var(--muted);font-size:11px">${p.match_date} ${p.match_time}</span></td>
+      <td>${p.league}</td>
+      <td><b>${p.tip}</b></td>
+      <td>${type}</td>
+      <td>${badge}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══ POST FREE TIP ═══
+// Set today's date as default
+document.getElementById('tip-date').value = new Date().toISOString().split('T')[0];
+
+async function postFreeTip() {
+  const home   = document.getElementById('tip-home').value.trim();
+  const away   = document.getElementById('tip-away').value.trim();
+  const league = document.getElementById('tip-league').value.trim();
+  const flag   = document.getElementById('tip-flag').value.trim();
+  const date   = document.getElementById('tip-date').value;
+  const time   = document.getElementById('tip-time').value;
+  const tip    = document.getElementById('tip-pick').value;
+  const odds   = parseFloat(document.getElementById('tip-odds').value);
+
+  if (!home || !away || !league || !date || !tip) { toast('Fill in all required fields', 'error'); return; }
+
+  const { error } = await sb.from('predictions').insert({
+    home, away, league, flag, match_date: date, match_time: time,
+    tip, odds, is_free: true, is_acca: false, acca_position: null
+  });
+
+  if (error) { toast(error.message, 'error'); return; }
+  toast('Free tip published!');
+  loadDashboard();
+}
+
+// ═══ POST ACCA ═══
+document.getElementById('acca-date').value = new Date().toISOString().split('T')[0];
+let legCount = 0;
+
+function addLeg() {
+  legCount++;
+  const n = legCount;
+  const div = document.createElement('div');
+  div.className = 'leg-card';
+  div.id = 'leg-' + n;
+  div.innerHTML = `
+    <div class="leg-num">Leg ${n}</div>
+    <div class="form-grid">
+      <div class="form-group"><label>Home Team</label><input id="l${n}-home" placeholder="Home" type="text"></div>
+      <div class="form-group"><label>Away Team</label><input id="l${n}-away" placeholder="Away" type="text"></div>
+      <div class="form-group"><label>League</label><input id="l${n}-league" placeholder="League" type="text"></div>
+      <div class="form-group"><label>Flag</label><input id="l${n}-flag" placeholder="🌍" type="text"></div>
+      <div class="form-group"><label>Time</label><input id="l${n}-time" type="time"></div>
+      <div class="form-group"><label>Tip</label>
+        <select id="l${n}-tip">
+          <option value="1">1 — Home Win</option><option value="X">X — Draw</option>
+          <option value="2">2 — Away Win</option><option value="1X">1X</option>
+          <option value="X2">X2</option><option value="GG">GG</option>
+          <option value="O2.5">Over 2.5</option><option value="U2.5">Under 2.5</option>
+        </select>
+      </div>
+    </div>
+    <div class="leg-lock-row">
+      <label class="toggle"><input type="checkbox" id="l${n}-locked"><span class="toggle-slider"></span></label>
+      <span class="toggle-label">Lock prediction (show match, hide tip)</span>
+      <button class="btn btn-red btn-sm" style="margin-left:auto" onclick="document.getElementById('leg-${n}').remove();legCount--">Remove</button>
+    </div>`;
+  document.getElementById('acca-legs').appendChild(div);
+}
+
+// Add 4 legs by default
+[1,2,3,4].forEach(() => addLeg());
+// Lock legs 3 & 4 by default
+setTimeout(() => {
+  ['3','4'].forEach(n => {
+    const cb = document.getElementById('l'+n+'-locked');
+    if (cb) cb.checked = true;
+  });
+}, 100);
+
+async function postAcca() {
+  const date      = document.getElementById('acca-date').value;
+  const totalOdds = document.getElementById('acca-total-odds').value;
+  if (!date) { toast('Set a match date', 'error'); return; }
+
+  const legs = document.querySelectorAll('.leg-card');
+  const rows = [];
+  for (let i = 0; i < legs.length; i++) {
+    const n = legs[i].id.replace('leg-','');
+    const home   = document.getElementById('l'+n+'-home')?.value.trim();
+    const away   = document.getElementById('l'+n+'-away')?.value.trim();
+    const league = document.getElementById('l'+n+'-league')?.value.trim();
+    const flag   = document.getElementById('l'+n+'-flag')?.value.trim();
+    const time   = document.getElementById('l'+n+'-time')?.value;
+    const tip    = document.getElementById('l'+n+'-tip')?.value;
+    const locked = document.getElementById('l'+n+'-locked')?.checked;
+    if (!home || !away) { toast('Fill home & away for all legs', 'error'); return; }
+    rows.push({ home, away, league, flag, match_date: date, match_time: time,
+      tip, is_free: false, is_acca: true, acca_position: i+1,
+      is_locked: locked, acca_total_odds: totalOdds });
+  }
+
+  const { error } = await sb.from('predictions').insert(rows);
+  if (error) { toast(error.message, 'error'); return; }
+  toast('Accumulator published! (' + rows.length + ' legs)');
+  loadDashboard();
+}
+
+// ═══ PENDING RESULTS ═══
+let pendingPreds = [];
+
+async function loadPendingResults() {
+  // Get predictions that have no result yet and are from today or earlier
+  const today = new Date().toISOString().split('T')[0];
+  const { data: settled } = await sb.from('results').select('prediction_id');
+  const settledIds = (settled || []).map(r => r.prediction_id);
+
+  let q = sb.from('predictions').select('*').lte('match_date', today).order('match_date', { ascending: false });
+  const { data } = await q;
+
+  pendingPreds = (data || []).filter(p => !settledIds.includes(p.id));
+
+  const tbody = document.getElementById('pending-tbody');
+  if (!pendingPreds.length) {
+    tbody.innerHTML = '<tr><td colspan="5" style="color:var(--muted);text-align:center;padding:20px">✅ All results settled!</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = pendingPreds.map(p => `
+    <tr>
+      <td><b>${p.home} vs ${p.away}</b><br><span style="color:var(--muted);font-size:11px">${p.match_date} · ${p.league}</span></td>
+      <td><b>${p.tip}</b></td>
+      <td>
+        <input type="text" id="score-${p.id}" placeholder="e.g. 2-1" style="width:70px;padding:6px 8px;font-size:12px">
+      </td>
+      <td>
+        <select id="outcome-${p.id}" style="padding:6px 8px;font-size:12px">
+          <option value="">Select...</option>
+          <option value="won">✓ Won</option>
+          <option value="lost">✗ Lost</option>
+          <option value="void">— Void</option>
+        </select>
+      </td>
+      <td>
+        <button class="btn btn-green btn-sm" onclick="settleResult('${p.id}')">Save</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function settleResult(predId) {
+  const scoreRaw = document.getElementById('score-'+predId).value.trim();
+  const outcome  = document.getElementById('outcome-'+predId).value;
+  if (!outcome) { toast('Select an outcome', 'error'); return; }
+
+  const parts = scoreRaw.split('-');
+  const scoreHome = parseInt(parts[0]) || 0;
+  const scoreAway = parseInt(parts[1]) || 0;
+
+  const { error } = await sb.from('results').insert({
+    prediction_id: predId, score_home: scoreHome, score_away: scoreAway,
+    outcome, settled_at: new Date().toISOString()
+  });
+
+  if (error) { toast(error.message, 'error'); return; }
+  toast('Result saved!');
+  loadPendingResults();
+  loadDashboard();
+}
+
+// ═══ BOOKMAKERS ═══
+async function saveBookmaker() {
+  const name     = document.getElementById('bk-name').value.trim();
+  const logo     = document.getElementById('bk-logo').value.trim().toUpperCase();
+  const bg       = document.getElementById('bk-bg').value;
+  const fg       = document.getElementById('bk-fg').value;
+  const bonus    = document.getElementById('bk-bonus').value.trim();
+  const desc     = document.getElementById('bk-desc').value.trim();
+  const url      = document.getElementById('bk-url').value.trim();
+  const countries= document.getElementById('bk-countries').value.split(',').map(s=>s.trim().toUpperCase()).filter(Boolean);
+  const rank     = parseInt(document.getElementById('bk-rank').value) || 99;
+  const rating   = parseFloat(document.getElementById('bk-rating').value) || 4.0;
+  const tags     = document.getElementById('bk-tags').value.split(',').map(s=>s.trim()).filter(Boolean);
+  const active   = document.getElementById('bk-active').checked;
+  const top      = document.getElementById('bk-top').checked;
+
+  if (!name || !logo || !bonus) { toast('Name, logo and bonus are required', 'error'); return; }
+
+  const stars = '★'.repeat(Math.round(rating)) + '☆'.repeat(5 - Math.round(rating));
+
+  const { error } = await sb.from('bookmakers').insert({
+    name, logo_text: logo, logo_bg: bg, logo_color: fg,
+    bonus_text: bonus, bonus_desc: desc, affiliate_url: url,
+    country_codes: countries, rank, rating, stars, tags,
+    is_active: active, is_top: top
+  });
+
+  if (error) { toast(error.message, 'error'); return; }
+  toast('Bookmaker saved!');
+  loadBookmakersTable();
+}
+
+async function loadBookmakersTable() {
+  const { data } = await sb.from('bookmakers').select('*').order('rank');
+  const tbody = document.getElementById('bk-tbody');
+  if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="color:var(--muted);text-align:center;padding:20px">No bookmakers yet</td></tr>'; return; }
+  tbody.innerHTML = data.map(bk => `
+    <tr>
+      <td><b>${bk.rank}</b></td>
+      <td>
+        <div style="display:flex;align-items:center;gap:8px">
+          <div style="background:${bk.logo_bg};color:${bk.logo_color};width:36px;height:28px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700">${bk.logo_text}</div>
+          <b>${bk.name}</b>
+        </div>
+      </td>
+      <td style="font-size:12px">${(bk.country_codes||[]).join(', ')}</td>
+      <td style="font-size:12px;color:var(--green)">${bk.bonus_text}</td>
+      <td>${bk.is_active ? '<span class="badge badge-won">ON</span>' : '<span class="badge badge-lost">OFF</span>'}</td>
+      <td>
+        <button class="btn btn-red btn-sm" onclick="deleteBookmaker('${bk.id}')">Delete</button>
+      </td>
+    </tr>`).join('');
+}
+
+async function deleteBookmaker(id) {
+  if (!confirm('Delete this bookmaker?')) return;
+  await sb.from('bookmakers').delete().eq('id', id);
+  toast('Deleted');
+  loadBookmakersTable();
+}
+
+// ═══ TELEGRAM LINK ═══
+async function saveTelegramLink() {
+  const url = document.getElementById('tg-url').value.trim();
+  if (!url) { toast('Enter a URL', 'error'); return; }
+  const { error } = await sb.from('settings').upsert({ key: 'telegram_url', value: url });
+  if (error) { toast(error.message, 'error'); return; }
+  toast('Telegram link updated! Site will reflect it immediately.');
+}
+
+// Load saved telegram link
+sb.from('settings').select('value').eq('key','telegram_url').single().then(({ data }) => {
+  if (data) document.getElementById('tg-url').value = data.value;
+});
+</script>
+</body>
+</html>

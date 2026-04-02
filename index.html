@@ -342,7 +342,7 @@ main{padding:16px 14px 40px;max-width:480px;margin:0 auto;animation:fadein .4s e
 // ═══════════════════════════════════════
 // SUPABASE CLIENT
 // ═══════════════════════════════════════
-const supabase = window.supabase
+const sb = window.supabase
   ? window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
   : null;
 
@@ -416,7 +416,7 @@ const DEMO = {
 async function fetchTodayTip() {
   if (USE_DEMO) return DEMO.freeTip;
   const today = new Date().toISOString().split('T')[0];
-  const { data } = await supabase.from('predictions')
+  const { data } = await sb.from('predictions')
     .select('*').eq('is_free', true).eq('match_date', today).limit(1).single();
   return data || DEMO.freeTip;
 }
@@ -424,7 +424,7 @@ async function fetchTodayTip() {
 async function fetchAccaLegs() {
   if (USE_DEMO) return { legs: DEMO.acca, totalOdds: DEMO.accaOdds };
   const today = new Date().toISOString().split('T')[0];
-  const { data } = await supabase.from('predictions')
+  const { data } = await sb.from('predictions')
     .select('*').eq('is_acca', true).eq('match_date', today).order('acca_position');
   return { legs: data || DEMO.acca, totalOdds: '–' };
 }
@@ -438,7 +438,7 @@ async function fetchResults(filter = 'all') {
     if (filter === 'acca') r = r.filter(x => x.is_acca);
     return r;
   }
-  let q = supabase.from('results')
+  let q = sb.from('results')
     .select('*, predictions(home, away, league, flag, tip, is_acca)')
     .order('settled_at', { ascending: false }).limit(50);
   if (filter === 'won') q = q.eq('outcome', 'won');
@@ -449,7 +449,7 @@ async function fetchResults(filter = 'all') {
 
 async function fetchBookmakers(countryCode) {
   if (USE_DEMO) return DEMO.bookmakers[countryCode] || DEMO.bookmakers.INT;
-  const { data } = await supabase.from('bookmakers')
+  const { data } = await sb.from('bookmakers')
     .select('*').eq('is_active', true)
     .or(`country_codes.cs.{${countryCode}},country_codes.cs.{ALL}`)
     .order('rank');
